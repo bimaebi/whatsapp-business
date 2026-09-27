@@ -60,7 +60,10 @@ function getApiBaseUrl(): string {
 }
 
 async function fetchJson<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const baseUrl = getApiBaseUrl();
+  const requestUrl = baseUrl ? `${baseUrl}${path}` : path;
+
+  const response = await fetch(requestUrl, {
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers ?? {}),
@@ -152,6 +155,18 @@ export async function ensureSeedAccounts(): Promise<UserAccount[]> {
         displayName: 'Bima',
         passwordHash,
       },
+      {
+        id: 'user-galang',
+        username: 'galang',
+        displayName: 'Galang',
+        passwordHash,
+      },
+      {
+        id: 'user-rijik',
+        username: 'rijik',
+        displayName: 'Rijik',
+        passwordHash,
+      },
     ];
 
     const created = await fetchJson<UserAccount[]>('/api/users/seed', {
@@ -205,12 +220,12 @@ export async function loginUser(username: string, password: string): Promise<Use
   const trimmedUsername = normalizeUsername(username);
 
   try {
-    const response = await fetchJson<{ user: UserAccount | null } | { error?: string }>('/api/auth/login', {
+    const response = await fetchJson<{ user?: UserAccount | null; error?: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username: trimmedUsername, password }),
     });
 
-    const user = response?.user ?? null;
+    const user = 'user' in response ? response.user ?? null : null;
     if (!user) {
       return null;
     }
@@ -250,7 +265,7 @@ export async function registerUser(input: {
   }
 
   try {
-    const response = await fetchJson<{ user: UserAccount | null } | { error?: string }>('/api/auth/register', {
+    const response = await fetchJson<{ user?: UserAccount | null; error?: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         username,
@@ -259,7 +274,7 @@ export async function registerUser(input: {
       }),
     });
 
-    const user = response?.user ?? null;
+    const user = 'user' in response ? response.user ?? null : null;
     if (!user) {
       return null;
     }

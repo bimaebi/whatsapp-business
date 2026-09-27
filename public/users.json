@@ -25,10 +25,10 @@
       }
     },
     {
-      "id": "user-1790239273793",
-      "username": "newuser999",
-      "displayName": "New User 999",
-      "passwordHash": "6367c48dd193d56ea7b0baad25b19455e529f5ee",
+      "id": "user-galang",
+      "username": "galang",
+      "displayName": "Galang",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
       "chats": [],
       "settings": {
         "isDark": true,
@@ -37,10 +37,10 @@
       }
     },
     {
-      "id": "user-1790239546162",
-      "username": "newuser777",
-      "displayName": "New User 777",
-      "passwordHash": "6367c48dd193d56ea7b0baad25b19455e529f5ee",
+      "id": "user-rijik",
+      "username": "rijik",
+      "displayName": "Rijik",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
       "chats": [],
       "settings": {
         "isDark": true,

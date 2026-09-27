@@ -112,6 +112,22 @@ async function ensureSeedUsers() {
       chats: [],
       settings: { ...defaultSettings },
     },
+    {
+      id: 'user-galang',
+      username: 'galang',
+      displayName: 'Galang',
+      passwordHash: hashPassword('123456'),
+      chats: [],
+      settings: { ...defaultSettings },
+    },
+    {
+      id: 'user-rijik',
+      username: 'rijik',
+      displayName: 'Rijik',
+      passwordHash: hashPassword('123456'),
+      chats: [],
+      settings: { ...defaultSettings },
+    },
   ];
 
   await writeUsersFile(seeded);
