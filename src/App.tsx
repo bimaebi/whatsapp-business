@@ -10,92 +10,102 @@ import { DeleteModal } from './components/DeleteModal';
 import { BottomNav } from './components/BottomNav';
 import { PanggilanView, PembaruanView, FiturView } from './components/OtherViews';
 import { generateInitialChats, getFormattedLaptopTime } from './data/mockChats';
-import { loadStoredChats, upsertChat, deleteChat, replaceAllChats } from './lib/sqlite';
+import {
+  DEFAULT_CHAT_WELCOME_MESSAGE,
+  ensureSeedAccounts,
+  getActiveUser,
+  getUserSettings,
+  loadUserChats,
+  loginUser,
+  logoutCurrentUser,
+  registerUser,
+  saveUserChats,
+  saveUserSettings,
+  type UserAccount,
+} from './lib/auth';
 import { ChatItem, FilterCategory, MainTab } from './types';
-import { RotateCcw } from 'lucide-react';
-
-const DEFAULT_CHAT_WELCOME_MESSAGE = `📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥
-
-🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n
-
-_Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!*
-
-‼️ Ada kendala dalam pembuatan ID? *Chat ke wa pribadi aku* Klik ➡️  cutt.ly/WaJeniCn88
-
-*_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️
-⚠️ Cari kami di google ketik: *CUAN88*  ⚠️`;
-const DEFAULT_MESSAGE_STORAGE_KEY = 'whatsapp-default-message';
-const DEFAULT_MESSAGE_IMAGE_STORAGE_KEY = 'whatsapp-default-message-image';
 
 export default function App() {
-  // Theme state: dark mode matching the screenshots
-  const [isDark, setIsDark] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authForm, setAuthForm] = useState({ username: '', password: '', displayName: '' });
+  const [authError, setAuthError] = useState('');
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Main data state
+  const [isDark, setIsDark] = useState(true);
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [activeChat, setActiveChat] = useState<ChatItem | null>(null);
 
-  // Filter & Navigation states
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Semua');
   const [activeTab, setActiveTab] = useState<MainTab>('chat');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdBannerVisible, setIsAdBannerVisible] = useState(true);
-  const [defaultMessage, setDefaultMessage] = useState<string>(() => {
-    if (typeof window === 'undefined') {
-      return DEFAULT_CHAT_WELCOME_MESSAGE;
-    }
+  const [defaultMessage, setDefaultMessage] = useState<string>(DEFAULT_CHAT_WELCOME_MESSAGE);
+  const [defaultMessageImage, setDefaultMessageImage] = useState<string>('');
 
-    const savedMessage = window.localStorage.getItem(DEFAULT_MESSAGE_STORAGE_KEY);
-    return savedMessage || DEFAULT_CHAT_WELCOME_MESSAGE;
-  });
-  const [defaultMessageImage, setDefaultMessageImage] = useState<string>(() => {
-    if (typeof window === 'undefined') {
-      return '';
-    }
-
-    return window.localStorage.getItem(DEFAULT_MESSAGE_IMAGE_STORAGE_KEY) || '';
-  });
-
-  // Multi-Selection state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleteProcessing, setIsDeleteProcessing] = useState(false);
-
-  // Chat detail animation state
   const [isChatDetailOpen, setIsChatDetailOpen] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(DEFAULT_MESSAGE_STORAGE_KEY, defaultMessage);
-      window.localStorage.setItem(DEFAULT_MESSAGE_IMAGE_STORAGE_KEY, defaultMessageImage);
-    }
-  }, [defaultMessage, defaultMessageImage]);
+  const applyUserSession = async (user: UserAccount) => {
+    const settings = await getUserSettings(user.id);
+    setCurrentUser(user);
+    setIsDark(settings.isDark);
+    setDefaultMessage(settings.defaultMessage);
+    setDefaultMessageImage(settings.defaultMessageImage);
+    setChats(await loadUserChats(user.id));
+    setActiveChat(null);
+    setIsChatDetailOpen(false);
+    setSearchQuery('');
+    setActiveFilter('Semua');
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadData = async () => {
-      try {
-        const data = await loadStoredChats();
-        if (isMounted) {
-          setChats(data);
-        }
-      } catch {
-        if (isMounted) {
-          setChats([]);
-        }
+    const bootstrap = async () => {
+      await ensureSeedAccounts();
+      if (!isMounted) {
+        return;
       }
+
+      const activeUser = getActiveUser();
+      if (activeUser) {
+        void applyUserSession(activeUser);
+      }
+      setIsAuthReady(true);
     };
 
-    loadData();
+    void bootstrap();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    void saveUserSettings(currentUser.id, {
+      isDark,
+      defaultMessage,
+      defaultMessageImage,
+    });
+  }, [currentUser, isDark, defaultMessage, defaultMessageImage]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    void saveUserChats(currentUser.id, chats);
+  }, [currentUser, chats]);
 
   // Filter chats by search and category, then randomize which chats get blue checkmarks
   const filteredChats = useMemo(() => {
@@ -200,14 +210,12 @@ export default function App() {
     return undefined;
   }, [activeChat, isChatDetailOpen]);
 
-  // Confirm delete with realistic processing spinner
   const handleConfirmDelete = async () => {
     setIsDeleteProcessing(true);
 
     try {
       const remainingChats = chats.filter((c) => !selectedIds.has(c.id));
-      const savedChats = await replaceAllChats(remainingChats);
-      setChats(savedChats);
+      setChats(remainingChats);
     } finally {
       setIsDeleteProcessing(false);
       setIsDeleteModalOpen(false);
@@ -216,17 +224,13 @@ export default function App() {
     }
   };
 
-  // Restore demo chats
   const handleResetChats = async () => {
-    const restoredChats = generateInitialChats();
-    const savedChats = await replaceAllChats(restoredChats);
-    setChats(savedChats);
+    setChats(generateInitialChats());
     setIsSelectionMode(false);
     setSelectedIds(new Set());
     setIsAdBannerVisible(true);
   };
 
-  // Send message in chat detail (default centang abu-abu & waktu laptop sekarang)
   const handleSendMessage = async (text: string) => {
     if (!activeChat) return;
     const timeStr = getFormattedLaptopTime(0);
@@ -248,10 +252,8 @@ export default function App() {
 
     setActiveChat(updated);
     setChats((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    await upsertChat(updated);
   };
 
-  // Add new chat
   const handleNewChat = async () => {
     const nextNum = String(chats.filter((chat) => chat.id.startsWith('celin-')).length + 1).padStart(3, '0');
     const timeStr = getFormattedLaptopTime(0);
@@ -265,8 +267,7 @@ export default function App() {
       messages: [],
     };
 
-    const savedChat = await upsertChat(newContact);
-    setChats((prev) => [savedChat, ...prev]);
+    setChats((prev) => [newContact, ...prev]);
   };
 
   const handleMetaAIClick = () => {
@@ -274,19 +275,147 @@ export default function App() {
   };
 
   const handleSaveChat = async (chat: ChatItem) => {
-    const savedChat = await upsertChat(chat);
     setChats((prev) => {
-      const filtered = prev.filter((item) => item.id !== savedChat.id);
-      return [savedChat, ...filtered].sort((a, b) => a.name.localeCompare(b.name));
+      const filtered = prev.filter((item) => item.id !== chat.id);
+      return [chat, ...filtered].sort((a, b) => a.name.localeCompare(b.name));
     });
-    setActiveChat((current) => (current?.id === savedChat.id ? savedChat : current));
+    setActiveChat((current) => (current?.id === chat.id ? chat : current));
   };
 
   const handleDeleteChat = async (id: string) => {
-    const savedChats = await deleteChat(id);
-    setChats(savedChats);
+    setChats((prev) => prev.filter((item) => item.id !== id));
     setActiveChat((current) => (current?.id === id ? null : current));
   };
+
+  const handleLogin = async () => {
+    const user = await loginUser(authForm.username, authForm.password);
+    if (!user) {
+      setAuthError('Username atau password salah. Coba tester1 atau bima dengan password 123456.');
+      return;
+    }
+
+    setAuthError('');
+    setCurrentUser(user);
+    const settings = await getUserSettings(user.id);
+    setIsDark(settings.isDark);
+    setDefaultMessage(settings.defaultMessage);
+    setDefaultMessageImage(settings.defaultMessageImage);
+    setChats(await loadUserChats(user.id));
+    setAuthForm({ username: '', password: '', displayName: '' });
+  };
+
+  const handleRegister = async () => {
+    if (!authForm.username.trim() || !authForm.password.trim() || !authForm.displayName.trim()) {
+      setAuthError('Username, nama, dan password harus diisi.');
+      return;
+    }
+
+    const createdUser = await registerUser({
+      username: authForm.username,
+      password: authForm.password,
+      displayName: authForm.displayName,
+    });
+
+    if (!createdUser) {
+      setAuthError('Username sudah dipakai, silakan pilih nama lain.');
+      return;
+    }
+
+    setAuthError('');
+    setCurrentUser(createdUser);
+    const settings = await getUserSettings(createdUser.id);
+    setIsDark(settings.isDark);
+    setDefaultMessage(settings.defaultMessage);
+    setDefaultMessageImage(settings.defaultMessageImage);
+    setChats(await loadUserChats(createdUser.id));
+    setAuthForm({ username: '', password: '', displayName: '' });
+  };
+
+  const handleLogout = () => {
+    logoutCurrentUser();
+    setCurrentUser(null);
+    setAuthForm({ username: '', password: '', displayName: '' });
+    setAuthError('');
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+    setActiveChat(null);
+    setChats([]);
+  };
+
+  if (!isAuthReady || !currentUser) {
+    return (
+      <div className="min-h-screen bg-[#0D1015] flex items-center justify-center px-4 font-sans antialiased text-[#e9edef]">
+        <div className="w-full max-w-sm rounded-3xl bg-[#111b21] p-6 shadow-2xl border border-[#2a3942]">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#00a884] text-2xl font-bold text-[#061811]">
+              W
+            </div>
+            <h1 className="text-2xl font-bold">WhatsApp Business</h1>
+            <p className="mt-1 text-sm text-[#8696a0]">
+              {authMode === 'login' ? 'Masuk ke akun Anda' : 'Buat akun baru'}
+            </p>
+          </div>
+
+          {authMode === 'register' && (
+            <input
+              type="text"
+              value={authForm.displayName}
+              onChange={(event) => setAuthForm((prev) => ({ ...prev, displayName: event.target.value }))}
+              placeholder="Nama lengkap"
+              className="mb-3 w-full rounded-xl border border-[#2a3942] bg-[#0d1015] px-3 py-2.5 text-sm text-white outline-none ring-0 placeholder:text-[#8696a0]"
+            />
+          )}
+
+          <input
+            type="text"
+            value={authForm.username}
+            onChange={(event) => setAuthForm((prev) => ({ ...prev, username: event.target.value }))}
+            placeholder="Username"
+            className="mb-3 w-full rounded-xl border border-[#2a3942] bg-[#0d1015] px-3 py-2.5 text-sm text-white outline-none ring-0 placeholder:text-[#8696a0]"
+          />
+
+          <input
+            type="password"
+            value={authForm.password}
+            onChange={(event) => setAuthForm((prev) => ({ ...prev, password: event.target.value }))}
+            placeholder="Password"
+            className="mb-4 w-full rounded-xl border border-[#2a3942] bg-[#0d1015] px-3 py-2.5 text-sm text-white outline-none ring-0 placeholder:text-[#8696a0]"
+          />
+
+          {authError && (
+            <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              {authError}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={authMode === 'login' ? handleLogin : handleRegister}
+            className="mb-3 w-full rounded-xl bg-[#00a884] px-3 py-2.5 text-sm font-semibold text-[#061811] transition hover:bg-[#1fcb9f]"
+          >
+            {authMode === 'login' ? 'Masuk' : 'Daftar'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode((prev) => (prev === 'login' ? 'register' : 'login'));
+              setAuthError('');
+            }}
+            className="w-full rounded-xl border border-[#2a3942] px-3 py-2.5 text-sm text-[#e9edef] transition hover:bg-[#1c222b]"
+          >
+            {authMode === 'login' ? 'Buat akun baru' : 'Sudah punya akun? Masuk'}
+          </button>
+
+          <div className="mt-5 rounded-xl border border-[#2a3942] bg-[#0d1015] px-3 py-2 text-[11px] leading-5 text-[#8696a0]">
+            Demo akun: <span className="font-semibold text-[#d1d5db]">tester1</span> atau <span className="font-semibold text-[#d1d5db]">bima</span>
+            <br />
+            Password: <span className="font-semibold text-[#d1d5db]">123456</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0D1015] flex flex-col items-center justify-center font-sans antialiased text-[#e9edef]">
@@ -330,11 +459,13 @@ export default function App() {
                 <TopHeader
                   searchQuery={searchQuery}
                   isDark={isDark}
-                  onToggleTheme={() => setIsDark(!isDark)}
+                  currentUser={currentUser}
+                  onToggleTheme={() => setIsDark((prev) => !prev)}
                   onSearchChange={setSearchQuery}
                   onSelectAll={handleSelectAll}
                   onResetChats={handleResetChats}
                   totalChats={chats.length}
+                  onLogout={handleLogout}
                 />
               )}
 
@@ -431,6 +562,7 @@ export default function App() {
                     setDefaultMessage(message);
                     setDefaultMessageImage(image || '');
                   }}
+                  onLogout={handleLogout}
                 />
               )}
 

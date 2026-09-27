@@ -91,7 +91,7 @@ export default defineConfig(() => {
         process.env.DISABLE_HMR === 'true'
           ? null
           : {
-              ignored: ['**/public/contacts.json'],
+              ignored: ['**/public/contacts.json', '**/public/users.json'],
             },
     },
   };

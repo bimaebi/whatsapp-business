@@ -1,43 +1,52 @@
 {
   "users": [
     {
-      "id": "37e63db5-3bf1-4f47-a15a-2f0cb942c9d0",
+      "id": "user-tester-1",
       "username": "tester1",
       "displayName": "Tester Satu",
-      "passwordHash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-      "sessionToken": "9b5aa47dc9334a69d9a4f90122542dc30287e0ce85d8ee5498481b6f8a554b95",
-      "chats": []
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": [],
+      "settings": {
+        "isDark": true,
+        "defaultMessage": "📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥\n\n🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n\n\n_Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!*\n\n‼️ Ada kendala dalam pembuatan ID? *Chat ke wa pribadi aku* Klik ➡️  cutt.ly/WaJeniCn88\n\n*_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️\n⚠️ Cari kami di google ketik: *CUAN88*  ⚠️",
+        "defaultMessageImage": ""
+      }
     },
     {
-      "id": "b358b887-9709-460f-be9f-a59c3775a61a",
-      "username": "Bima",
+      "id": "user-bima",
+      "username": "bima",
       "displayName": "Bima",
-      "passwordHash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-      "sessionToken": "53761bb4c2bcba07ff89530246c589d1dadb3d7851b6ba33254ffbe6a0b5a35b",
-      "chats": [
-        {
-          "id": "import-6285805216784-1789313377196-0",
-          "name": "+62 858-0521-6784",
-          "avatar": "",
-          "time": "22.29.37",
-          "lastMessage": "Eh, kamu masih aktif? Ada info menarik nih\n\n🔥𝐌𝐚𝐡𝐣𝐨𝐧𝐠 𝐖𝐚𝐲𝐬 𝟐 𝐋𝐚𝐠𝐢 𝐑𝐨𝐲𝐚𝐥 𝐒𝐜𝐚𝐭𝐭𝐞𝐫 𝐇𝐚𝐫𝐢 𝐈𝐧𝐢!\n\n💸 𝗗𝗘𝗣𝗢𝗦𝗜𝗧 𝟮𝟱 𝗞 + 𝗕𝗢𝗡𝗨𝗦 𝟮𝟱 𝗞\n💸 𝗗𝗘𝗣𝗢𝗦𝗜𝗧 𝟱𝟬 𝗞 + 𝗕𝗢𝗡𝗨𝗦 𝟱𝟬 𝗞\n💸 𝗗𝗘𝗣𝗢𝗦𝗜𝗧 𝟳𝟱 𝗞 + 𝗕𝗢𝗡𝗨𝗦 𝟳𝟱 𝗞\n\n🎁ʙᴏɴᴜꜱ ɴᴇᴡ ᴍᴇᴍʙᴇʀ 100%\n🛡ʙᴏɴᴜꜱ ɢᴀʀᴀɴꜱɪ ᴋᴇᴋᴀʟᴀʜᴀɴ 100%\n       ʀᴜɴɢᴋᴀᴅ ?? ᴍᴏᴅᴀʟ ᴋᴀᴍɪ ᴋᴇᴍʙᴀʟɪᴋᴀɴ!!\n⚡️𝐃𝐞𝐩𝐨 𝐦𝐮𝐥𝐚𝐢 𝟐𝟎𝐊 | 𝐏𝐫𝐨𝐬𝐞𝐬 𝐖𝐃 𝐂𝐞𝐩𝐚𝐭 & 𝐀𝐦𝐚𝐧.\n\n💥 Daftar sekarang — bonus langsung masuk!\n⚡️ Peluang jackpot makin tinggi!\n\n🎮 Main sekarang & raih JACKPOT!\n𝐃𝐀𝐅𝐓𝐀𝐑 ➜ https://heylink.me/jrgsite.com/",
-          "lastMessageImage": "",
-          "hasTimer": false,
-          "status": "delivered",
-          "unreadCount": 0,
-          "isGroup": false,
-          "isFavorite": false,
-          "messages": []
-        }
-      ]
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": [],
+      "settings": {
+        "isDark": true,
+        "defaultMessage": "📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥\n\n🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n\n\n_Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!*\n\n‼️ Ada kendala dalam pembuatan ID? *Chat ke wa pribadi aku* Klik ➡️  cutt.ly/WaJeniCn88\n\n*_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️\n⚠️ Cari kami di google ketik: *CUAN88*  ⚠️",
+        "defaultMessageImage": ""
+      }
     },
     {
-      "id": "d0f35ef3-412a-4604-a8f9-16311eae2056",
-      "username": "Bimaeo",
-      "displayName": "Bima",
-      "passwordHash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
-      "sessionToken": "40972385ebc92cbb0b83207cea1867f5b5d1ed07931ab6708f8c35a736f377b2",
-      "chats": []
+      "id": "user-1790239273793",
+      "username": "newuser999",
+      "displayName": "New User 999",
+      "passwordHash": "6367c48dd193d56ea7b0baad25b19455e529f5ee",
+      "chats": [],
+      "settings": {
+        "isDark": true,
+        "defaultMessage": "📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥\n\n🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n\n\n_Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!*\n\n‼️ Ada kendala dalam pembuatan ID? *Chat ke wa pribadi aku* Klik ➡️  cutt.ly/WaJeniCn88\n\n*_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️\n⚠️ Cari kami di google ketik: *CUAN88*  ⚠️",
+        "defaultMessageImage": ""
+      }
+    },
+    {
+      "id": "user-1790239546162",
+      "username": "newuser777",
+      "displayName": "New User 777",
+      "passwordHash": "6367c48dd193d56ea7b0baad25b19455e529f5ee",
+      "chats": [],
+      "settings": {
+        "isDark": true,
+        "defaultMessage": "📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥\n\n🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n\n\n_Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!*\n\n‼️ Ada kendala dalam pembuatan ID? *Chat ke wa pribadi aku* Klik ➡️  cutt.ly/WaJeniCn88\n\n*_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️\n⚠️ Cari kami di google ketik: *CUAN88*  ⚠️",
+        "defaultMessageImage": ""
+      }
     }
   ]
 }

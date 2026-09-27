@@ -28,6 +28,7 @@ interface FiturViewProps extends ViewProps {
   onSaveChat: (chat: ChatItem) => Promise<void> | void;
   onDeleteChat: (id: string) => Promise<void> | void;
   onSetDefaultMessage: (message: string, image?: string) => void;
+  onLogout?: () => void;
 }
 
 export const PanggilanView: React.FC<ViewProps> = ({ isDark = true }) => {
@@ -182,6 +183,7 @@ export const FiturView: React.FC<FiturViewProps> = ({
   onSaveChat,
   onDeleteChat,
   onSetDefaultMessage,
+  onLogout,
 }) => {
   const getCurrentTime = (offsetSeconds = 0) => {
     const now = new Date();
@@ -745,6 +747,16 @@ export const FiturView: React.FC<FiturViewProps> = ({
             )}
           </div>
         </div>
+      </div>
+
+      <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'border-[#1c222b] bg-[#101820]' : 'border-gray-100 bg-gray-50'}`}>
+        <button
+          type="button"
+          onClick={() => onLogout?.()}
+          className="w-full rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
+        >
+          Logout
+        </button>
       </div>
 
       <div className="space-y-4 mt-4">

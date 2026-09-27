@@ -4,21 +4,25 @@ import { Camera, MoreVertical, Search, Moon, Sun } from 'lucide-react';
 interface TopHeaderProps {
   searchQuery: string;
   isDark?: boolean;
+  currentUser?: { displayName: string; username: string } | null;
   onToggleTheme?: () => void;
   onSearchChange: (query: string) => void;
   onSelectAll: () => void;
   onResetChats: () => void;
   totalChats: number;
+  onLogout?: () => void;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
   searchQuery,
   isDark = true,
+  currentUser,
   onToggleTheme,
   onSearchChange,
   onSelectAll,
   onResetChats,
   totalChats,
+  onLogout,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,9 +49,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       }`}
     >
       <div className="flex items-center justify-between h-12">
-        <h1 className="text-[22px] font-bold tracking-tight">
-          WhatsApp
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[22px] font-bold tracking-tight">
+            WhatsApp
+          </h1>
+        </div>
 
         <div className="flex items-center gap-3 text-[#8696a0]">
           {/* {onToggleTheme && (
@@ -153,6 +159,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 >
                   Blokir
                 </button>
+                {onLogout && (
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onLogout();
+                    }}
+                  >
+                    Keluar
+                  </button>
+                )}
               </div>
             )}
           </div>
