@@ -25,9 +25,11 @@ interface FiturViewProps extends ViewProps {
   contacts: ChatItem[];
   defaultMessage: string;
   defaultMessageImage?: string;
+  chatWallpaper?: string;
   onSaveChat: (chat: ChatItem) => Promise<void> | void;
   onDeleteChat: (id: string) => Promise<void> | void;
   onSetDefaultMessage: (message: string, image?: string) => void;
+  onSetChatWallpaper?: (wallpaper: string) => void;
   onLogout?: () => void;
 }
 
@@ -180,9 +182,11 @@ export const FiturView: React.FC<FiturViewProps> = ({
   contacts,
   defaultMessage,
   defaultMessageImage = '',
+  chatWallpaper = '',
   onSaveChat,
   onDeleteChat,
   onSetDefaultMessage,
+  onSetChatWallpaper,
   onLogout,
 }) => {
   const getCurrentTime = (offsetSeconds = 0) => {
@@ -215,6 +219,7 @@ export const FiturView: React.FC<FiturViewProps> = ({
   const [isImportBlueTickEnabled, setIsImportBlueTickEnabled] = React.useState(false);
   const [defaultMessageDraft, setDefaultMessageDraft] = React.useState(defaultMessage);
   const [defaultMessageImageDraft, setDefaultMessageImageDraft] = React.useState(defaultMessageImage);
+  const [chatWallpaperDraft, setChatWallpaperDraft] = React.useState(chatWallpaper);
 
   React.useEffect(() => {
     setDefaultMessageDraft(defaultMessage);
@@ -223,6 +228,10 @@ export const FiturView: React.FC<FiturViewProps> = ({
   React.useEffect(() => {
     setDefaultMessageImageDraft(defaultMessageImage);
   }, [defaultMessageImage]);
+
+  React.useEffect(() => {
+    setChatWallpaperDraft(chatWallpaper);
+  }, [chatWallpaper]);
 
   const formatPhoneNumber = React.useCallback((rawPhone: string) => {
     const digits = rawPhone.replace(/\D/g, '');
@@ -279,6 +288,21 @@ export const FiturView: React.FC<FiturViewProps> = ({
         ...prev,
         avatar: String(reader.result ?? ''),
       }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleWallpaperFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const nextImage = String(reader.result ?? '');
+      setChatWallpaperDraft(nextImage);
+      onSetChatWallpaper?.(nextImage);
     };
     reader.readAsDataURL(file);
   };
@@ -587,6 +611,54 @@ export const FiturView: React.FC<FiturViewProps> = ({
             Set default message
           </button>
         </div>
+      </div>
+
+      <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'border-[#1c222b] bg-[#101820]' : 'border-gray-100 bg-gray-50'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className={`font-semibold text-[15px] ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>
+            Wallpaper chat detail
+          </h4>
+        </div>
+
+        <label className="block">
+          <span className="text-xs font-medium text-[#8696a0]">URL wallpaper chat</span>
+          <input
+            value={chatWallpaperDraft}
+            onChange={(event) => setChatWallpaperDraft(event.target.value)}
+            className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none ${
+              isDark
+                ? 'border-[#1c222b] bg-[#0D1015] text-[#e9edef]'
+                : 'border-gray-200 bg-white text-[#111b21]'
+            }`}
+            placeholder="https://example.com/wallpaper.jpg"
+          />
+        </label>
+
+        <div className="mt-3 flex items-center gap-2">
+          <label className={`inline-flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-xs font-medium ${
+            isDark
+              ? 'border-[#1c222b] bg-[#0D1015] text-[#e9edef]'
+              : 'border-gray-200 bg-white text-[#111b21]'
+          }`}>
+            <Upload className="mr-2 h-4 w-4" />
+            Pilih gambar
+            <input type="file" accept="image/*" className="hidden" onChange={handleWallpaperFileChange} />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => onSetChatWallpaper?.(chatWallpaperDraft)}
+            className="rounded-xl bg-[#00a884] px-3 py-2 text-xs font-semibold text-[#111b21]"
+          >
+            Simpan wallpaper
+          </button>
+        </div>
+
+        {chatWallpaperDraft && (
+          <div className="mt-3 overflow-hidden rounded-xl border border-[#1c222b] bg-[#0D1015]">
+            <img src={chatWallpaperDraft} alt="Preview wallpaper" className="h-32 w-full object-cover" />
+          </div>
+        )}
       </div>
 
       <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'border-[#1c222b] bg-[#101820]' : 'border-gray-100 bg-gray-50'}`}>

@@ -24,6 +24,7 @@ _Dijamin WD Minimal 1 Juta di deposit pertama_ *Tidak WD? GARANSI SALDO KEMBALI!
 *_TERBUKTI SITUS RESMI NO 1 SE-ASIA_*‼️
 ⚠️ Cari kami di google ketik: *CUAN88*  ⚠️`,
   defaultMessageImage: '',
+  chatWallpaper: '',
 };
 
 function hashPassword(value) {
@@ -184,6 +185,7 @@ app.post('/api/users/seed', async (req, res) => {
         isDark: Boolean(user.settings?.isDark),
         defaultMessage: user.settings?.defaultMessage || defaultSettings.defaultMessage,
         defaultMessageImage: user.settings?.defaultMessageImage || '',
+        chatWallpaper: user.settings?.chatWallpaper || '',
       },
     }));
 
@@ -255,6 +257,7 @@ app.get('/api/users/:userId/settings', async (req, res) => {
       isDark: Boolean(user.settings?.isDark),
       defaultMessage: user.settings?.defaultMessage || defaultSettings.defaultMessage,
       defaultMessageImage: user.settings?.defaultMessageImage || '',
+      chatWallpaper: user.settings?.chatWallpaper || '',
     });
   } catch {
     return res.status(500).json({ error: 'Failed to load settings' });
@@ -273,6 +276,7 @@ app.put('/api/users/:userId/settings', async (req, res) => {
       isDark: Boolean(req.body?.isDark ?? true),
       defaultMessage: req.body?.defaultMessage || defaultSettings.defaultMessage,
       defaultMessageImage: req.body?.defaultMessageImage || '',
+      chatWallpaper: req.body?.chatWallpaper || '',
     };
 
     users[userIndex].settings = nextSettings;

@@ -42,6 +42,7 @@ export default function App() {
   const [isAdBannerVisible, setIsAdBannerVisible] = useState(true);
   const [defaultMessage, setDefaultMessage] = useState<string>(DEFAULT_CHAT_WELCOME_MESSAGE);
   const [defaultMessageImage, setDefaultMessageImage] = useState<string>('');
+  const [chatWallpaper, setChatWallpaper] = useState<string>('');
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -55,6 +56,7 @@ export default function App() {
     setIsDark(settings.isDark);
     setDefaultMessage(settings.defaultMessage);
     setDefaultMessageImage(settings.defaultMessageImage);
+    setChatWallpaper(settings.chatWallpaper);
     setChats(await loadUserChats(user.id));
     setActiveChat(null);
     setIsChatDetailOpen(false);
@@ -96,8 +98,9 @@ export default function App() {
       isDark,
       defaultMessage,
       defaultMessageImage,
+      chatWallpaper,
     });
-  }, [currentUser, isDark, defaultMessage, defaultMessageImage]);
+  }, [currentUser, isDark, defaultMessage, defaultMessageImage, chatWallpaper]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -290,7 +293,7 @@ export default function App() {
   const handleLogin = async () => {
     const user = await loginUser(authForm.username, authForm.password);
     if (!user) {
-      setAuthError('Username atau password salah. Coba tester1 atau bima dengan password 123456.');
+      setAuthError('Username atau password salah. Coba tester1, bima, galang, atau rijik dengan password 123456.');
       return;
     }
 
@@ -300,6 +303,7 @@ export default function App() {
     setIsDark(settings.isDark);
     setDefaultMessage(settings.defaultMessage);
     setDefaultMessageImage(settings.defaultMessageImage);
+    setChatWallpaper(settings.chatWallpaper);
     setChats(await loadUserChats(user.id));
     setAuthForm({ username: '', password: '', displayName: '' });
   };
@@ -327,6 +331,7 @@ export default function App() {
     setIsDark(settings.isDark);
     setDefaultMessage(settings.defaultMessage);
     setDefaultMessageImage(settings.defaultMessageImage);
+    setChatWallpaper(settings.chatWallpaper);
     setChats(await loadUserChats(createdUser.id));
     setAuthForm({ username: '', password: '', displayName: '' });
   };
@@ -339,6 +344,7 @@ export default function App() {
     setIsSelectionMode(false);
     setSelectedIds(new Set());
     setActiveChat(null);
+    setChatWallpaper('');
     setChats([]);
   };
 
@@ -558,10 +564,12 @@ export default function App() {
                   defaultMessageImage={defaultMessageImage}
                   onSaveChat={handleSaveChat}
                   onDeleteChat={handleDeleteChat}
+                  chatWallpaper={chatWallpaper}
                   onSetDefaultMessage={(message, image) => {
                     setDefaultMessage(message);
                     setDefaultMessageImage(image || '');
                   }}
+                  onSetChatWallpaper={(wallpaper) => setChatWallpaper(wallpaper || '')}
                   onLogout={handleLogout}
                 />
               )}
@@ -585,6 +593,7 @@ export default function App() {
               <ChatDetail
                 chat={activeChat}
                 isDark={isDark}
+                chatWallpaper={chatWallpaper}
                 onBack={handleCloseChat}
                 onSendMessage={handleSendMessage}
               />

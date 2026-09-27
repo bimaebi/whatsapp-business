@@ -17,6 +17,7 @@ import { ProfileView } from './ProfileView';
 interface ChatDetailProps {
   chat: ChatItem;
   isDark?: boolean;
+  chatWallpaper?: string;
   onBack: () => void;
   onSendMessage: (text: string) => void;
 }
@@ -30,6 +31,7 @@ const getLinkCount = (text: string): number => {
 export const ChatDetail: React.FC<ChatDetailProps> = ({
   chat,
   isDark = true,
+  chatWallpaper = '',
   onBack,
   onSendMessage,
 }) => {
@@ -243,7 +245,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
         className="flex-1 overflow-y-auto p-3 space-y-3 relative"
         style={{
           backgroundColor: '#0D1015',
-          backgroundImage: "url('/chat-wallpaper.jpg')",
+          backgroundImage: chatWallpaper ? `url(${chatWallpaper})` : "url('/chat-wallpaper.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

@@ -11,6 +11,7 @@ export interface UserSettings {
   isDark: boolean;
   defaultMessage: string;
   defaultMessageImage: string;
+  chatWallpaper: string;
 }
 
 export const DEFAULT_CHAT_WELCOME_MESSAGE = `📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥
@@ -298,11 +299,12 @@ export function logoutCurrentUser(): void {
 
 export async function getUserSettings(userId: string): Promise<UserSettings> {
   try {
-    const response = await fetchJson<{ isDark?: boolean; defaultMessage?: string; defaultMessageImage?: string }>(`/api/users/${userId}/settings`);
+    const response = await fetchJson<{ isDark?: boolean; defaultMessage?: string; defaultMessageImage?: string; chatWallpaper?: string }>(`/api/users/${userId}/settings`);
     return {
       isDark: response.isDark ?? true,
       defaultMessage: response.defaultMessage || DEFAULT_CHAT_WELCOME_MESSAGE,
       defaultMessageImage: response.defaultMessageImage || '',
+      chatWallpaper: response.chatWallpaper || '',
     };
   } catch {
     const storage = readStorage();
@@ -311,6 +313,7 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
         isDark: true,
         defaultMessage: DEFAULT_CHAT_WELCOME_MESSAGE,
         defaultMessageImage: '',
+        chatWallpaper: '',
       };
     }
 
@@ -320,6 +323,7 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
       isDark: parsed?.isDark ?? true,
       defaultMessage: parsed?.defaultMessage || DEFAULT_CHAT_WELCOME_MESSAGE,
       defaultMessageImage: parsed?.defaultMessageImage || '',
+      chatWallpaper: parsed?.chatWallpaper || '',
     };
   }
 }
