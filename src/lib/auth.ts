@@ -50,13 +50,6 @@ function getApiBaseUrl(): string {
     return configured.replace(/\/$/, '');
   }
 
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol;
-
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
-    return `${protocol}//${hostname}:3002`;
-  }
-
   return '';
 }
 
@@ -220,37 +213,33 @@ export function getActiveUser(accounts: UserAccount[] = getStoredAccounts()): Us
 export async function loginUser(username: string, password: string): Promise<UserAccount | null> {
   const trimmedUsername = normalizeUsername(username);
 
+  let response: { user?: UserAccount | null; error?: string };
   try {
-    const response = await fetchJson<{ user?: UserAccount | null; error?: string }>('/api/auth/login', {
+    response = await fetchJson<{ user?: UserAccount | null; error?: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username: trimmedUsername, password }),
     });
-
-    const user = 'user' in response ? response.user ?? null : null;
-    if (!user) {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Request failed: 401') {
       return null;
     }
 
-    const freshAccounts = await ensureSeedAccounts();
-    const normalizedUser = freshAccounts.find((account) =>
-      account.id === user.id || normalizeUsername(account.username) === normalizeUsername(user.username),
-    ) ?? user;
+    throw error;
+  }
 
-    setActiveUser(normalizedUser);
-    saveStoredAccounts([normalizedUser]);
-    return normalizedUser;
-  } catch {
-    const fallback = getStoredAccounts().find((account) =>
-      normalizeUsername(account.username) === trimmedUsername,
-    );
-
-    if (fallback) {
-      setActiveUser(fallback);
-      return fallback;
-    }
-
+  const user = 'user' in response ? response.user ?? null : null;
+  if (!user) {
     return null;
   }
+
+  const freshAccounts = await ensureSeedAccounts();
+  const normalizedUser = freshAccounts.find((account) =>
+    account.id === user.id || normalizeUsername(account.username) === normalizeUsername(user.username),
+  ) ?? user;
+
+  setActiveUser(normalizedUser);
+  saveStoredAccounts([normalizedUser]);
+  return normalizedUser;
 }
 
 export async function registerUser(input: {

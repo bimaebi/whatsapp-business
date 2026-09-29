@@ -291,9 +291,16 @@ export default function App() {
   };
 
   const handleLogin = async () => {
-    const user = await loginUser(authForm.username, authForm.password);
+    let user: UserAccount | null;
+    try {
+      user = await loginUser(authForm.username, authForm.password);
+    } catch {
+      setAuthError('Server login tidak dapat dihubungi. Pastikan server API aktif, lalu coba lagi.');
+      return;
+    }
+
     if (!user) {
-      setAuthError('Username atau password salah. Coba tester1, bima, galang, atau rijik dengan password 123456.');
+      setAuthError('Username atau password salah. Akun demo: tester1, bima, galang, atau rijik — password: 123456.');
       return;
     }
 
