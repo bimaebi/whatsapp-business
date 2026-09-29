@@ -312,6 +312,41 @@
         "defaultMessageImage": "",
         "chatWallpaper": ""
       }
+    },
+    {
+      "id": "user-karyawan-1",
+      "username": "karyawan1",
+      "displayName": "Karyawan 1",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": []
+    },
+    {
+      "id": "user-karyawan-2",
+      "username": "karyawan2",
+      "displayName": "Karyawan 2",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": []
+    },
+    {
+      "id": "user-karyawan-3",
+      "username": "karyawan3",
+      "displayName": "Karyawan 3",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": []
+    },
+    {
+      "id": "user-karyawan-4",
+      "username": "karyawan4",
+      "displayName": "Karyawan 4",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": []
+    },
+    {
+      "id": "user-karyawan-5",
+      "username": "karyawan5",
+      "displayName": "Karyawan 5",
+      "passwordHash": "7c4a8d09ca3762af61e59520943dc26494f8941b",
+      "chats": []
     }
   ]
 }
