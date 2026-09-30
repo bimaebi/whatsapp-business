@@ -75,7 +75,7 @@ export default defineConfig(() => {
     },
     server: {
       allowedHosts: [
-        'undaunted-replica-overload.ngrok-free.dev'
+        'turkey-tightness-supreme.ngrok-free.dev'
       ],
       proxy: {
         '/api': {
