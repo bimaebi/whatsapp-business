@@ -67,7 +67,7 @@ function aistudioMediaPlugin(): Plugin {
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), aistudioMediaPlugin(), VitePWA({ registerType: 'autoUpdate' })],
+    plugins: [react(), tailwindcss(), aistudioMediaPlugin(), VitePWA({ registerType: 'prompt' })],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -81,6 +81,10 @@ export default defineConfig(() => {
         '/api': {
           target: 'http://localhost:3002',
           changeOrigin: true,
+        },
+        '/ws': {
+          target: 'ws://localhost:3002',
+          ws: true,
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

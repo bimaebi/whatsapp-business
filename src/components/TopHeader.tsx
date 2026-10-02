@@ -13,6 +13,36 @@ interface TopHeaderProps {
   onLogout?: () => void;
 }
 
+interface SearchBarProps {
+  searchQuery: string;
+  isDark?: boolean;
+  onSearchChange: (query: string) => void;
+}
+
+export const SearchBar: React.FC<SearchBarProps> = ({
+  searchQuery,
+  isDark = true,
+  onSearchChange,
+}) => (
+  <div
+    className={`flex items-center gap-3 rounded-full px-4 py-2 text-sm transition-all ${
+      isDark
+        ? 'bg-[#1c222b] text-[#e9edef] focus-within:ring-1 focus-within:ring-[#00a884]'
+        : 'bg-[#f0f2f5] text-[#111b21] focus-within:ring-1 focus-within:ring-[#008069]'
+    }`}
+  >
+    <Search className="w-4 h-4 text-[#8696a0] shrink-0" />
+    <input
+      id="search-input"
+      type="text"
+      value={searchQuery}
+      onChange={(event) => onSearchChange(event.target.value)}
+      placeholder="Cari..."
+      className="w-full bg-transparent outline-none placeholder-[#8696a0]"
+    />
+  </div>
+);
+
 export const TopHeader: React.FC<TopHeaderProps> = ({
   searchQuery,
   isDark = true,
@@ -44,11 +74,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   return (
     <header
       id="wa-top-header"
-      className={`pt-1 pb-2 transition-colors ${
+      className={`px-4 pt-1 pb-2 transition-colors ${
         isDark ? 'bg-[#0D1015] text-[#e9edef]' : 'bg-white text-[#111b21]'
       }`}
     >
-      <div className="flex items-center justify-between h-12 px-4">
+      <div className="flex items-center justify-between h-12">
         <div className="flex items-center gap-2">
           <h1 className="text-[22px] font-bold tracking-tight">
             WhatsApp
@@ -177,35 +207,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
       </div>
 
-      <SearchBar isDark={isDark} searchQuery={searchQuery} onSearchChange={onSearchChange} />
+      {/* Search Input Bar */}
+      <div className="mt-1">
+        <SearchBar searchQuery={searchQuery} isDark={isDark} onSearchChange={onSearchChange} />
+      </div>
     </header>
   );
 };
-
-interface SearchBarProps {
-  searchQuery: string;
-  isDark?: boolean;
-  onSearchChange: (query: string) => void;
-}
-
-export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, isDark = true, onSearchChange }) => (
-  <div className="mt-1 shrink-0 px-4">
-    <div
-      className={`flex items-center gap-3 rounded-full px-4 py-2 text-sm transition-all ${
-        isDark
-          ? 'bg-[#1c222b] text-[#e9edef] focus-within:ring-1 focus-within:ring-[#00a884]'
-          : 'bg-[#f0f2f5] text-[#111b21] focus-within:ring-1 focus-within:ring-[#008069]'
-      }`}
-    >
-      <Search className="w-4 h-4 text-[#8696a0] shrink-0" />
-      <input
-        id="search-input"
-        type="text"
-        value={searchQuery}
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Cari..."
-        className="w-full bg-transparent outline-none placeholder-[#8696a0]"
-      />
-    </div>
-  </div>
-);

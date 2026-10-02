@@ -34,6 +34,7 @@ export default function App() {
 
   const [isDark, setIsDark] = useState(true);
   const [chats, setChats] = useState<ChatItem[]>([]);
+  const lastRemoteChatsRef = React.useRef<string | null>(null);
   const [activeChat, setActiveChat] = useState<ChatItem | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Semua');
@@ -51,35 +52,46 @@ export default function App() {
   const [isChatDetailOpen, setIsChatDetailOpen] = useState(false);
 
   const applyUserSession = async (user: UserAccount) => {
-    const settings = await getUserSettings(user.id);
-    setCurrentUser(user);
+    const [settings, userChats] = await Promise.all([
+      getUserSettings(user.id),
+      loadUserChats(user.id),
+    ]);
+
     setIsDark(settings.isDark);
     setDefaultMessage(settings.defaultMessage);
     setDefaultMessageImage(settings.defaultMessageImage);
     setChatWallpaper(settings.chatWallpaper);
-    setChats(await loadUserChats(user.id));
+    setChats(userChats);
     setActiveChat(null);
     setIsChatDetailOpen(false);
     setSearchQuery('');
     setActiveFilter('Semua');
     setIsSelectionMode(false);
     setSelectedIds(new Set());
+    setCurrentUser(user);
   };
 
   useEffect(() => {
     let isMounted = true;
 
     const bootstrap = async () => {
-      await ensureSeedAccounts();
-      if (!isMounted) {
-        return;
-      }
+      try {
+        await ensureSeedAccounts();
+        if (!isMounted) {
+          return;
+        }
 
-      const activeUser = getActiveUser();
-      if (activeUser) {
-        void applyUserSession(activeUser);
+        const activeUser = getActiveUser();
+        if (activeUser) {
+          await applyUserSession(activeUser);
+        }
+      } catch {
+        // Continue to the login screen if restoring local session data fails.
+      } finally {
+        if (isMounted) {
+          setIsAuthReady(true);
+        }
       }
-      setIsAuthReady(true);
     };
 
     void bootstrap();
@@ -107,8 +119,80 @@ export default function App() {
       return;
     }
 
+    const serializedChats = JSON.stringify(chats);
+    if (lastRemoteChatsRef.current === serializedChats) {
+      lastRemoteChatsRef.current = null;
+      return;
+    }
+
     void saveUserChats(currentUser.id, chats);
   }, [currentUser, chats]);
+
+  useEffect(() => {
+    if (!currentUser || typeof WebSocket === 'undefined') {
+      return;
+    }
+
+    let isDisposed = false;
+    let reconnectTimer: number | undefined;
+    let socket: WebSocket | undefined;
+
+    const connect = () => {
+      if (isDisposed) {
+        return;
+      }
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const userId = encodeURIComponent(currentUser.id);
+      socket = new WebSocket(`${protocol}//${window.location.host}/ws?userId=${userId}`);
+
+      socket.onmessage = (event) => {
+        try {
+          const update = JSON.parse(String(event.data)) as {
+            type?: string;
+            userId?: string;
+            chats?: ChatItem[];
+          };
+          if (update.type !== 'chats:updated' || update.userId !== currentUser.id || !Array.isArray(update.chats)) {
+            return;
+          }
+
+          const serializedChats = JSON.stringify(update.chats);
+          lastRemoteChatsRef.current = serializedChats;
+          setChats((currentChats) => {
+            if (JSON.stringify(currentChats) === serializedChats) {
+              lastRemoteChatsRef.current = null;
+              return currentChats;
+            }
+            return update.chats!;
+          });
+          setActiveChat((currentChat) => {
+            if (!currentChat) {
+              return currentChat;
+            }
+            return update.chats!.find((chat) => chat.id === currentChat.id) ?? null;
+          });
+        } catch {
+          // Ignore malformed messages and keep the current chat state.
+        }
+      };
+
+      socket.onclose = () => {
+        if (!isDisposed) {
+          reconnectTimer = window.setTimeout(connect, 1500);
+        }
+      };
+    };
+
+    connect();
+    return () => {
+      isDisposed = true;
+      if (reconnectTimer !== undefined) {
+        window.clearTimeout(reconnectTimer);
+      }
+      socket?.close();
+    };
+  }, [currentUser]);
 
   // Filter chats by search and category, then randomize which chats get blue checkmarks
   const filteredChats = useMemo(() => {
@@ -325,13 +409,7 @@ export default function App() {
     }
 
     setAuthError('');
-    setCurrentUser(user);
-    const settings = await getUserSettings(user.id);
-    setIsDark(settings.isDark);
-    setDefaultMessage(settings.defaultMessage);
-    setDefaultMessageImage(settings.defaultMessageImage);
-    setChatWallpaper(settings.chatWallpaper);
-    setChats(await loadUserChats(user.id));
+    await applyUserSession(user);
     setAuthForm({ username: '', password: '', displayName: '' });
   };
 
@@ -353,13 +431,7 @@ export default function App() {
     }
 
     setAuthError('');
-    setCurrentUser(createdUser);
-    const settings = await getUserSettings(createdUser.id);
-    setIsDark(settings.isDark);
-    setDefaultMessage(settings.defaultMessage);
-    setDefaultMessageImage(settings.defaultMessageImage);
-    setChatWallpaper(settings.chatWallpaper);
-    setChats(await loadUserChats(createdUser.id));
+    await applyUserSession(createdUser);
     setAuthForm({ username: '', password: '', displayName: '' });
   };
 
@@ -375,7 +447,20 @@ export default function App() {
     setChats([]);
   };
 
-  if (!isAuthReady || !currentUser) {
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-[#0D1015] flex items-center justify-center font-sans antialiased text-[#e9edef]">
+        <div className="text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#00a884] text-2xl font-bold text-[#061811]">
+            W
+          </div>
+          <p className="text-sm text-[#8696a0]">Memuat WhatsApp Business...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-[#0D1015] flex items-center justify-center px-4 font-sans antialiased text-[#e9edef]">
         <div className="w-full max-w-sm rounded-3xl bg-[#111b21] p-6 shadow-2xl border border-[#2a3942]">

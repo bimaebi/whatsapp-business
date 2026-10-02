@@ -2,12 +2,17 @@ import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { createServer } from 'http';
+import { WebSocket, WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const port = 3002;
+const httpServer = createServer(app);
+const webSocketServer = new WebSocketServer({ server: httpServer, path: '/ws' });
+const chatSubscribers = new Map();
 const usersPath = path.join(__dirname, 'public', 'users.json');
 const contactsPath = path.join(__dirname, 'public', 'contacts.json');
 const importLogsPath = path.join(__dirname, 'public', 'import-logs.json');
@@ -138,6 +143,53 @@ async function ensureSeedUsers() {
 }
 
 app.use(express.json({ limit: '10mb' }));
+
+function broadcastChats(userId, chats) {
+  const subscribers = chatSubscribers.get(userId);
+  if (!subscribers) {
+    return;
+  }
+
+  const message = JSON.stringify({ type: 'chats:updated', userId, chats });
+  for (const client of subscribers) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  }
+}
+
+webSocketServer.on('connection', async (socket, request) => {
+  const requestUrl = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+  const userId = requestUrl.searchParams.get('userId');
+  if (!userId) {
+    socket.close(1008, 'userId is required');
+    return;
+  }
+
+  const subscribers = chatSubscribers.get(userId) ?? new Set();
+  subscribers.add(socket);
+  chatSubscribers.set(userId, subscribers);
+
+  socket.on('close', () => {
+    subscribers.delete(socket);
+    if (subscribers.size === 0) {
+      chatSubscribers.delete(userId);
+    }
+  });
+
+  try {
+    const user = (await ensureSeedUsers()).find((item) => item.id === userId);
+    if (user && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'chats:updated',
+        userId,
+        chats: Array.isArray(user.chats) ? user.chats : [],
+      }));
+    }
+  } catch {
+    // The regular API request remains the fallback if the initial sync fails.
+  }
+});
 
 app.get('/api/contacts', async (_req, res) => {
   try {
@@ -352,12 +404,13 @@ app.put('/api/users/:userId/chats', async (req, res) => {
     const chats = Array.isArray(req.body) ? req.body : [];
     users[userIndex].chats = chats;
     await writeUsersFile(users);
+    broadcastChats(req.params.userId, chats);
     return res.json(chats);
   } catch {
     return res.status(500).json({ error: 'Failed to save chats' });
   }
 });
 
-app.listen(port, () => {
+httpServer.listen(port, () => {
   console.log(`Contacts API running on http://localhost:${port}`);
 });
