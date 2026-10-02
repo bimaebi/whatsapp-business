@@ -35,6 +35,7 @@ export default function App() {
   const [isDark, setIsDark] = useState(true);
   const [chats, setChats] = useState<ChatItem[]>([]);
   const lastRemoteChatsRef = React.useRef<string | null>(null);
+  const settingsSaveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
   const [activeChat, setActiveChat] = useState<ChatItem | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Semua');
@@ -106,12 +107,20 @@ export default function App() {
       return;
     }
 
-    void saveUserSettings(currentUser.id, {
-      isDark,
-      defaultMessage,
-      defaultMessageImage,
-      chatWallpaper,
-    });
+    const timeoutId = window.setTimeout(() => {
+      const settingsToSave = {
+        isDark,
+        defaultMessage,
+        defaultMessageImage,
+        chatWallpaper,
+      };
+
+      settingsSaveQueueRef.current = settingsSaveQueueRef.current
+        .catch(() => undefined)
+        .then(() => saveUserSettings(currentUser.id, settingsToSave));
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
   }, [currentUser, isDark, defaultMessage, defaultMessageImage, chatWallpaper]);
 
   useEffect(() => {

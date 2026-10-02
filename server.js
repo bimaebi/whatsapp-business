@@ -17,6 +17,7 @@ const usersPath = path.join(__dirname, 'public', 'users.json');
 const contactsPath = path.join(__dirname, 'public', 'contacts.json');
 const importLogsPath = path.join(__dirname, 'public', 'import-logs.json');
 let importLogWriteQueue = Promise.resolve();
+let userMutationQueue = Promise.resolve();
 
 const defaultSettings = {
   isDark: true,
@@ -70,6 +71,12 @@ async function writeUsersFile(users) {
   await fs.writeFile(usersPath, nextContent, 'utf8');
 }
 
+function serializeUserMutation(operation) {
+  const queuedOperation = userMutationQueue.then(operation, operation);
+  userMutationQueue = queuedOperation.then(() => undefined, () => undefined);
+  return queuedOperation;
+}
+
 function sanitizeUser(user) {
   const { passwordHash, ...rest } = user;
   return rest;
@@ -99,7 +106,6 @@ async function ensureSeedUsers() {
       settings: { ...defaultSettings, ...(user.settings || {}) },
     }));
 
-    await writeUsersFile(persistedUsers);
     return persistedUsers;
   }
 
@@ -282,7 +288,7 @@ app.post('/api/users/seed', async (req, res) => {
       },
     }));
 
-    await writeUsersFile(users);
+    await serializeUserMutation(() => writeUsersFile(users));
     res.json(users.map((user) => sanitizeUser(user)));
   } catch {
     res.status(500).json({ error: 'Failed to seed users' });
@@ -316,24 +322,26 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Username, display name, and password are required' });
     }
 
-    const users = await ensureSeedUsers();
-    const exists = users.some((user) => user.username.toLowerCase() === cleanUsername.toLowerCase());
-    if (exists) {
-      return res.status(409).json({ error: 'Username already exists' });
-    }
+    const result = await serializeUserMutation(async () => {
+      const users = await ensureSeedUsers();
+      const exists = users.some((user) => user.username.toLowerCase() === cleanUsername);
+      if (exists) {
+        return { status: 409, body: { error: 'Username already exists' } };
+      }
 
-    const newUser = {
-      id: `user-${Date.now()}`,
-      username: cleanUsername,
-      displayName: cleanDisplayName,
-      passwordHash: hashPassword(String(password)),
-      chats: [],
-      settings: { ...defaultSettings },
-    };
+      const newUser = {
+        id: `user-${Date.now()}`,
+        username: cleanUsername,
+        displayName: cleanDisplayName,
+        passwordHash: hashPassword(String(password)),
+        chats: [],
+        settings: { ...defaultSettings },
+      };
 
-    const nextUsers = [...users, newUser];
-    await writeUsersFile(nextUsers);
-    return res.status(201).json({ user: sanitizeUser(newUser) });
+      await writeUsersFile([...users, newUser]);
+      return { status: 201, body: { user: sanitizeUser(newUser) } };
+    });
+    return res.status(result.status).json(result.body);
   } catch {
     return res.status(500).json({ error: 'Registration failed' });
   }
@@ -348,9 +356,9 @@ app.get('/api/users/:userId/settings', async (req, res) => {
 
     return res.json({
       isDark: Boolean(user.settings?.isDark),
-      defaultMessage: user.settings?.defaultMessage || defaultSettings.defaultMessage,
-      defaultMessageImage: user.settings?.defaultMessageImage || '',
-      chatWallpaper: user.settings?.chatWallpaper || '',
+      defaultMessage: user.settings?.defaultMessage ?? defaultSettings.defaultMessage,
+      defaultMessageImage: user.settings?.defaultMessageImage ?? '',
+      chatWallpaper: user.settings?.chatWallpaper ?? '',
     });
   } catch {
     return res.status(500).json({ error: 'Failed to load settings' });
@@ -359,22 +367,34 @@ app.get('/api/users/:userId/settings', async (req, res) => {
 
 app.put('/api/users/:userId/settings', async (req, res) => {
   try {
-    const users = await ensureSeedUsers();
-    const userIndex = users.findIndex((item) => item.id === req.params.userId);
-    if (userIndex === -1) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const result = await serializeUserMutation(async () => {
+      const users = await ensureSeedUsers();
+      const userIndex = users.findIndex((item) => item.id === req.params.userId);
+      if (userIndex === -1) {
+        return { status: 404, body: { error: 'User not found' } };
+      }
 
-    const nextSettings = {
-      isDark: Boolean(req.body?.isDark ?? true),
-      defaultMessage: req.body?.defaultMessage || defaultSettings.defaultMessage,
-      defaultMessageImage: req.body?.defaultMessageImage || '',
-      chatWallpaper: req.body?.chatWallpaper || '',
-    };
+      const currentSettings = users[userIndex].settings || defaultSettings;
+      const nextSettings = {
+        isDark: typeof req.body?.isDark === 'boolean'
+          ? req.body.isDark
+          : currentSettings.isDark ?? defaultSettings.isDark,
+        defaultMessage: typeof req.body?.defaultMessage === 'string'
+          ? req.body.defaultMessage
+          : currentSettings.defaultMessage ?? defaultSettings.defaultMessage,
+        defaultMessageImage: typeof req.body?.defaultMessageImage === 'string'
+          ? req.body.defaultMessageImage
+          : currentSettings.defaultMessageImage ?? defaultSettings.defaultMessageImage,
+        chatWallpaper: typeof req.body?.chatWallpaper === 'string'
+          ? req.body.chatWallpaper
+          : currentSettings.chatWallpaper ?? defaultSettings.chatWallpaper,
+      };
 
-    users[userIndex].settings = nextSettings;
-    await writeUsersFile(users);
-    return res.json(nextSettings);
+      users[userIndex].settings = nextSettings;
+      await writeUsersFile(users);
+      return { status: 200, body: nextSettings };
+    });
+    return res.status(result.status).json(result.body);
   } catch {
     return res.status(500).json({ error: 'Failed to save settings' });
   }
@@ -395,17 +415,24 @@ app.get('/api/users/:userId/chats', async (req, res) => {
 
 app.put('/api/users/:userId/chats', async (req, res) => {
   try {
-    const users = await ensureSeedUsers();
-    const userIndex = users.findIndex((item) => item.id === req.params.userId);
-    if (userIndex === -1) {
+    const result = await serializeUserMutation(async () => {
+      const users = await ensureSeedUsers();
+      const userIndex = users.findIndex((item) => item.id === req.params.userId);
+      if (userIndex === -1) {
+        return null;
+      }
+
+      const chats = Array.isArray(req.body) ? req.body : [];
+      users[userIndex].chats = chats;
+      await writeUsersFile(users);
+      return chats;
+    });
+    if (result === null) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const chats = Array.isArray(req.body) ? req.body : [];
-    users[userIndex].chats = chats;
-    await writeUsersFile(users);
-    broadcastChats(req.params.userId, chats);
-    return res.json(chats);
+    broadcastChats(req.params.userId, result);
+    return res.json(result);
   } catch {
     return res.status(500).json({ error: 'Failed to save chats' });
   }

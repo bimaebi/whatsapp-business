@@ -468,9 +468,9 @@ export const FiturView: React.FC<FiturViewProps> = ({
           numberCount: importedCount,
           text: defaultMessage,
         });
-        setImportLogMessage(`Log import tersimpan: ${importedCount} nomor.`);
+        // setImportLogMessage(`Log import tersimpan: ${importedCount} nomor.`);
       } catch {
-        setImportLogMessage('Kontak diproses, tetapi log gagal disimpan. Pastikan server API aktif.');
+        // setImportLogMessage('Kontak diproses, tetapi log gagal disimpan. Pastikan server API aktif.');
       }
 
       setImportText('');

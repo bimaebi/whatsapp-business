@@ -301,7 +301,7 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
     const response = await fetchJson<{ isDark?: boolean; defaultMessage?: string; defaultMessageImage?: string; chatWallpaper?: string }>(`/api/users/${userId}/settings`);
     return {
       isDark: response.isDark ?? true,
-      defaultMessage: response.defaultMessage || DEFAULT_CHAT_WELCOME_MESSAGE,
+      defaultMessage: response.defaultMessage ?? DEFAULT_CHAT_WELCOME_MESSAGE,
       defaultMessageImage: response.defaultMessageImage || '',
       chatWallpaper: response.chatWallpaper || '',
     };
@@ -320,7 +320,7 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
     const parsed = raw ? JSON.parse(raw) : null;
     return {
       isDark: parsed?.isDark ?? true,
-      defaultMessage: parsed?.defaultMessage || DEFAULT_CHAT_WELCOME_MESSAGE,
+      defaultMessage: parsed?.defaultMessage ?? DEFAULT_CHAT_WELCOME_MESSAGE,
       defaultMessageImage: parsed?.defaultMessageImage || '',
       chatWallpaper: parsed?.chatWallpaper || '',
     };
