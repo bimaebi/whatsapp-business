@@ -621,11 +621,11 @@ export default function App() {
                     />
 
                     {/* Archived Row */}
-                    {/* <ArchivedRow
+                    <ArchivedRow
                       count={6}
                       isDark={isDark}
                       onClick={() => alert('Folder chat yang diarsipkan')}
-                    /> */}
+                    />
 
                     {/* Chat items */}
                     {filteredChats.length > 0 ? (
