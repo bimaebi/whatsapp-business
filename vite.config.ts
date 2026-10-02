@@ -74,7 +74,7 @@ export default defineConfig(() => {
     },
     server: {
       allowedHosts: [
-        'turkey-tightness-supreme.ngrok-free.dev'
+        'iwanimoney.my.id'
       ],
       proxy: {
         '/api': {
