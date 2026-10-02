@@ -14,8 +14,11 @@ import {
   Save,
   Trash2,
   Pencil,
+  ArrowLeft,
+  RefreshCw,
 } from 'lucide-react';
 import type { ChatItem } from '../types';
+import { createSharedImportLog, getSharedImportLogs, type SharedImportLog } from '../lib/auth';
 
 interface ViewProps {
   isDark?: boolean;
@@ -23,10 +26,12 @@ interface ViewProps {
 
 interface FiturViewProps extends ViewProps {
   contacts: ChatItem[];
+  username: string;
   defaultMessage: string;
   defaultMessageImage?: string;
   chatWallpaper?: string;
   onSaveChat: (chat: ChatItem) => Promise<void> | void;
+  onSaveChats: (chats: ChatItem[]) => Promise<void> | void;
   onDeleteChat: (id: string) => Promise<void> | void;
   onSetDefaultMessage: (message: string, image?: string) => void;
   onSetChatWallpaper?: (wallpaper: string) => void;
@@ -180,10 +185,12 @@ export const PembaruanView: React.FC<ViewProps> = ({ isDark = true }) => {
 export const FiturView: React.FC<FiturViewProps> = ({
   isDark = true,
   contacts,
+  username,
   defaultMessage,
   defaultMessageImage = '',
   chatWallpaper = '',
   onSaveChat,
+  onSaveChats,
   onDeleteChat,
   onSetDefaultMessage,
   onSetChatWallpaper,
@@ -216,6 +223,11 @@ export const FiturView: React.FC<FiturViewProps> = ({
   const [isSaving, setIsSaving] = React.useState(false);
   const [importText, setImportText] = React.useState('');
   const [isImporting, setIsImporting] = React.useState(false);
+  const [importLogMessage, setImportLogMessage] = React.useState('');
+  const [isImportLogsOpen, setIsImportLogsOpen] = React.useState(false);
+  const [importLogs, setImportLogs] = React.useState<SharedImportLog[]>([]);
+  const [isLoadingImportLogs, setIsLoadingImportLogs] = React.useState(false);
+  const [importLogsError, setImportLogsError] = React.useState('');
   const [isImportBlueTickEnabled, setIsImportBlueTickEnabled] = React.useState(false);
   const [defaultMessageDraft, setDefaultMessageDraft] = React.useState(defaultMessage);
   const [defaultMessageImageDraft, setDefaultMessageImageDraft] = React.useState(defaultMessageImage);
@@ -358,6 +370,23 @@ export const FiturView: React.FC<FiturViewProps> = ({
     });
   }, [onSaveChat]);
 
+  const loadImportLogs = React.useCallback(async () => {
+    setIsLoadingImportLogs(true);
+    setImportLogsError('');
+    try {
+      setImportLogs(await getSharedImportLogs());
+    } catch {
+      setImportLogsError('Log belum dapat dimuat. Pastikan server API aktif, lalu coba lagi.');
+    } finally {
+      setIsLoadingImportLogs(false);
+    }
+  }, []);
+
+  const handleOpenImportLogs = () => {
+    setIsImportLogsOpen(true);
+    void loadImportLogs();
+  };
+
   const handleImportContacts = React.useCallback(async () => {
     const trimmedText = importText.trim();
 
@@ -389,11 +418,16 @@ export const FiturView: React.FC<FiturViewProps> = ({
 
       const existingKeys = new Set(contacts.map((contact) => contact.name.toLowerCase()));
       const importedNames = new Set<string>();
+      const importedContacts: ChatItem[] = [];
 
       for (const [index, rawEntry] of rawEntries.entries()) {
         const entry = typeof rawEntry === 'string'
           ? { number: rawEntry, image: null }
           : rawEntry;
+
+        if (/--no-whatsapp\b/i.test(entry.number ?? '')) {
+          continue;
+        }
 
         const rawPhone = (entry.number ?? '').replace(/^[\-•\s]+/, '').trim();
         const formattedPhone = formatPhoneNumber(rawPhone);
@@ -422,14 +456,28 @@ export const FiturView: React.FC<FiturViewProps> = ({
 
         importedNames.add(formattedPhone.toLowerCase());
         existingKeys.add(formattedPhone.toLowerCase());
-        await onSaveChat(importedContact);
+        importedContacts.push(importedContact);
+      }
+
+      await onSaveChats(importedContacts);
+      const importedCount = importedContacts.length;
+
+      try {
+        await createSharedImportLog({
+          username,
+          numberCount: importedCount,
+          text: defaultMessage,
+        });
+        setImportLogMessage(`Log import tersimpan: ${importedCount} nomor.`);
+      } catch {
+        setImportLogMessage('Kontak diproses, tetapi log gagal disimpan. Pastikan server API aktif.');
       }
 
       setImportText('');
     } finally {
       setIsImporting(false);
     }
-  }, [contacts, defaultMessage, formatPhoneNumber, importText, isImportBlueTickEnabled, onSaveChat]);
+  }, [contacts, defaultMessage, defaultMessageImage, formatPhoneNumber, importText, isImportBlueTickEnabled, onSaveChats, username]);
 
   return (
     <div
@@ -709,6 +757,11 @@ export const FiturView: React.FC<FiturViewProps> = ({
             {isImporting ? 'Mengimpor...' : 'Import kontak'}
           </button>
         </div>
+        {importLogMessage && (
+          <p className={`mt-2 text-xs ${importLogMessage.startsWith('Log import tersimpan') ? 'text-[#00a884]' : 'text-amber-400'}`}>
+            {importLogMessage}
+          </p>
+        )}
       </div>
 
       <div className={`rounded-2xl border p-4 mt-4 ${isDark ? 'border-[#1c222b] bg-[#101820]' : 'border-gray-100 bg-gray-50'}`}>
@@ -837,6 +890,16 @@ export const FiturView: React.FC<FiturViewProps> = ({
           return (
             <div
               key={idx}
+              role={item.title === 'Pesan salam' ? 'button' : undefined}
+              tabIndex={item.title === 'Pesan salam' ? 0 : undefined}
+              aria-haspopup={item.title === 'Pesan salam' ? 'dialog' : undefined}
+              onClick={item.title === 'Pesan salam' ? handleOpenImportLogs : undefined}
+              onKeyDown={item.title === 'Pesan salam' ? (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleOpenImportLogs();
+                }
+              } : undefined}
               className={`flex items-start gap-4 p-2.5 rounded-xl cursor-pointer transition-colors border ${
                 isDark
                   ? 'border-[#1c222b] hover:bg-[#161c24]'
@@ -858,6 +921,83 @@ export const FiturView: React.FC<FiturViewProps> = ({
           );
         })}
       </div>
+
+      {isImportLogsOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setIsImportLogsOpen(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-logs-title"
+            className={`flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl ${
+              isDark ? 'border-[#26343d] bg-[#101820] text-[#e9edef]' : 'border-gray-200 bg-white text-[#111b21]'
+            }`}
+          >
+            <header className={`flex items-center gap-3 border-b px-4 py-3 ${isDark ? 'border-[#26343d]' : 'border-gray-200'}`}>
+              <button
+                type="button"
+                onClick={() => setIsImportLogsOpen(false)}
+                className="rounded-full p-2 hover:bg-white/10"
+                aria-label="Kembali"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div className="min-w-0 flex-1">
+                <h3 id="import-logs-title" className="font-semibold">Log import kontak</h3>
+                <p className="text-xs text-[#8696a0]">Log bersama yang dapat dilihat semua user</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadImportLogs()}
+                disabled={isLoadingImportLogs}
+                className="rounded-full p-2 text-[#00a884] hover:bg-white/10 disabled:opacity-50"
+                aria-label="Muat ulang log"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoadingImportLogs ? 'animate-spin' : ''}`} />
+              </button>
+            </header>
+
+            <div className="overflow-y-auto p-4">
+              {isLoadingImportLogs && importLogs.length === 0 ? (
+                <p className="py-8 text-center text-sm text-[#8696a0]">Memuat log...</p>
+              ) : importLogsError ? (
+                <p className="py-8 text-center text-sm text-red-400">{importLogsError}</p>
+              ) : importLogs.length === 0 ? (
+                <p className="py-8 text-center text-sm text-[#8696a0]">Belum ada log import kontak.</p>
+              ) : (
+                <div className="space-y-3">
+                  {importLogs.map((log) => (
+                    <article key={log.id} className={`rounded-xl border p-3 ${isDark ? 'border-[#26343d] bg-[#0D1015]' : 'border-gray-200 bg-gray-50'}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold">@{log.username}</p>
+                          <p className="text-xs text-[#8696a0]">{new Date(log.createdAt).toLocaleString()}</p>
+                        </div>
+                        <span className="rounded-full bg-[#00a884]/15 px-2.5 py-1 text-xs font-semibold text-[#00a884]">
+                          {log.numberCount} nomor
+                        </span>
+                      </div>
+                      <dl className="mt-3 grid gap-1 text-xs text-[#8696a0]">
+                        <div><dt className="inline font-semibold">IP: </dt><dd className="inline break-all">{log.ip}</dd></div>
+                        <div><dt className="inline font-semibold">Device: </dt><dd className="inline break-words">{log.device}</dd></div>
+                      </dl>
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-medium text-[#53bdeb]">Lihat pesan default yang dikirim</summary>
+                        <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/20 p-2 text-[11px] text-[#cbd5d1]">{log.text}</pre>
+                      </details>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

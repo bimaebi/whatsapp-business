@@ -157,12 +157,12 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             : 'bg-white border-gray-200 text-[#111b21]'
         }`}
       >
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
           <button
             id="back-to-list-btn"
             type="button"
             onClick={onBack}
-            className="p-1 -ml-1 text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+            className="p-1 -ml-1 shrink-0 text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
             aria-label="Kembali"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
@@ -177,16 +177,16 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
           <button
             type="button"
             onClick={() => setIsProfileOpen(true)}
-            className="ml-1 cursor-pointer text-left"
+            className="ml-1 min-w-0 flex-1 cursor-pointer overflow-hidden text-left"
             aria-label={`Buka profil ${chat.name}`}
           >
-            <h2 className="text-[17px] font-medium text-white leading-tight">
+            <h2 className="truncate whitespace-nowrap text-[17px] font-medium leading-tight text-white">
               {chat.name}
             </h2>
           </button>
         </div>
 
-        <div className="flex items-center gap-4 text-white pr-1">
+        <div className="flex shrink-0 items-center gap-3 text-white pr-1">
           {/* ic-videocam - 100% official WhatsApp SVG */}
           <button
             type="button"

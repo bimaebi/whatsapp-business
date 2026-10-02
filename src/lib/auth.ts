@@ -14,6 +14,16 @@ export interface UserSettings {
   chatWallpaper: string;
 }
 
+export interface SharedImportLog {
+  id: string;
+  createdAt: string;
+  username: string;
+  numberCount: number;
+  text: string;
+  ip: string;
+  device: string;
+}
+
 export const DEFAULT_CHAT_WELCOME_MESSAGE = `📍 *SELAMAT! Nomor kamu terpilih sebagai ID VIP dengan winrate 97% di CUAN88* 🔥
 
 🌹 *Link Daftar Hoki* ➡️  cutt.ly/DftrlgsgMaxW1n
@@ -370,4 +380,20 @@ export async function saveUserChats(userId: string, chats: ChatItem[]): Promise<
 
     storage.setItem(`wa-user-chats-${userId}`, JSON.stringify(chats));
   }
+}
+
+export async function getSharedImportLogs(): Promise<SharedImportLog[]> {
+  const logs = await fetchJson<SharedImportLog[]>('/api/import-logs');
+  return Array.isArray(logs) ? logs : [];
+}
+
+export async function createSharedImportLog(input: {
+  username: string;
+  numberCount: number;
+  text: string;
+}): Promise<SharedImportLog> {
+  return fetchJson<SharedImportLog>('/api/import-logs', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }

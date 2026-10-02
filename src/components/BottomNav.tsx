@@ -15,9 +15,50 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   isDark = true,
   onChangeTab,
   onNewChat,
+  onMetaAIClick,
 }) => {
   return (
     <>
+      {/* Meta AI shortcut */}
+      <div className="absolute right-5 bottom-39 z-30 pointer-events-auto">
+        <button
+          id="meta-ai-fab"
+          type="button"
+          onClick={() => onMetaAIClick?.()}
+          className={`w-8 h-8 rounded-[10px] flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer ${
+            isDark ? 'bg-[#202c33]' : 'bg-gray-100'
+          }`}
+          title="Meta AI"
+          aria-label="Meta AI"
+        >
+          <svg aria-hidden="true" height="24" width="24" viewBox="0 0 120 120">
+            <defs>
+              <mask id="meta-ai-logo-mask">
+                <circle cx="60" cy="60" r="60" fill="white" />
+              </mask>
+            </defs>
+            <g mask="url(#meta-ai-logo-mask)">
+              <image
+                href="https://static.whatsapp.net/rsrc.php/yx/r/gXBTTvfJjOA.webp"
+                x="0"
+                y="0"
+                width="120"
+                height="120"
+                preserveAspectRatio="xMidYMid slice"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="59.5"
+                fill="transparent"
+                stroke="rgba(255,255,255,0.16)"
+                strokeWidth="1"
+              />
+            </g>
+          </svg>
+        </button>
+      </div>
+
       {/* Floating Action Button (FAB) - wds-ic-new-chat-filled */}
       <div className="absolute right-4 bottom-20 z-30 pointer-events-auto">
         <button

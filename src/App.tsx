@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { TopHeader } from './components/TopHeader';
+import { SearchBar, TopHeader } from './components/TopHeader';
 import { SelectionHeader } from './components/SelectionHeader';
 import { AdBanner } from './components/AdBanner';
 import { FilterChips } from './components/FilterChips';
@@ -218,6 +218,14 @@ export default function App() {
 
     try {
       const remainingChats = chats.filter((c) => !selectedIds.has(c.id));
+      const persistence = currentUser
+        ? saveUserChats(currentUser.id, remainingChats)
+        : Promise.resolve();
+      const minimumAnimation = new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 500);
+      });
+
+      await Promise.all([persistence, minimumAnimation]);
       setChats(remainingChats);
     } finally {
       setIsDeleteProcessing(false);
@@ -283,6 +291,18 @@ export default function App() {
       return [chat, ...filtered].sort((a, b) => a.name.localeCompare(b.name));
     });
     setActiveChat((current) => (current?.id === chat.id ? chat : current));
+  };
+
+  const handleSaveChats = async (newChats: ChatItem[]) => {
+    if (newChats.length === 0) {
+      return;
+    }
+
+    setChats((previousChats) => {
+      const newChatIds = new Set(newChats.map((chat) => chat.id));
+      return [...previousChats.filter((chat) => !newChatIds.has(chat.id)), ...newChats]
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
   };
 
   const handleDeleteChat = async (id: string) => {
@@ -482,6 +502,16 @@ export default function App() {
                 />
               )}
 
+              {isSelectionMode && activeTab === 'chat' && (
+                <div className="shrink-0 pb-2">
+                  <SearchBar
+                    searchQuery={searchQuery}
+                    isDark={isDark}
+                    onSearchChange={setSearchQuery}
+                  />
+                </div>
+              )}
+
               {/* Chat tab content */}
               {activeTab === 'chat' && (
                 <>
@@ -493,25 +523,24 @@ export default function App() {
                     />
                   )}
 
-                  {/* Filter chips */}
-                  <FilterChips
-                    activeFilter={activeFilter}
-                    isDark={isDark}
-                    onSelectFilter={setActiveFilter}
-                    unreadCount={6}
-                  />
-
                   {/* Chat List Scroll Area */}
                   <div
                     id="chat-list-scroll-area"
                     className="flex-1 overflow-y-auto divide-y divide-transparent"
                   >
+                    <FilterChips
+                      activeFilter={activeFilter}
+                      isDark={isDark}
+                      onSelectFilter={setActiveFilter}
+                      unreadCount={6}
+                    />
+
                     {/* Archived Row */}
-                    <ArchivedRow
+                    {/* <ArchivedRow
                       count={6}
                       isDark={isDark}
                       onClick={() => alert('Folder chat yang diarsipkan')}
-                    />
+                    /> */}
 
                     {/* Chat items */}
                     {filteredChats.length > 0 ? (
@@ -567,9 +596,11 @@ export default function App() {
                 <FiturView
                   isDark={isDark}
                   contacts={chats}
+                  username={currentUser.username}
                   defaultMessage={defaultMessage}
                   defaultMessageImage={defaultMessageImage}
                   onSaveChat={handleSaveChat}
+                  onSaveChats={handleSaveChats}
                   onDeleteChat={handleDeleteChat}
                   chatWallpaper={chatWallpaper}
                   onSetDefaultMessage={(message, image) => {

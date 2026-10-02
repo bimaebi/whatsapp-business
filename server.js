@@ -10,6 +10,8 @@ const app = express();
 const port = 3002;
 const usersPath = path.join(__dirname, 'public', 'users.json');
 const contactsPath = path.join(__dirname, 'public', 'contacts.json');
+const importLogsPath = path.join(__dirname, 'public', 'import-logs.json');
+let importLogWriteQueue = Promise.resolve();
 
 const defaultSettings = {
   isDark: true,
@@ -154,6 +156,45 @@ app.put('/api/contacts', async (req, res) => {
     res.json({ success: true, count: data.length });
   } catch {
     res.status(500).json({ success: false, message: 'Failed to write contacts.' });
+  }
+});
+
+app.get('/api/import-logs', async (_req, res) => {
+  try {
+    const raw = await fs.readFile(importLogsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return res.json(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return res.json([]);
+  }
+});
+
+app.post('/api/import-logs', async (req, res) => {
+  try {
+    const log = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      username: String(req.body?.username || 'Unknown').trim().slice(0, 100),
+      numberCount: Math.max(0, Math.min(100000, Number(req.body?.numberCount) || 0)),
+      text: String(req.body?.text || '').slice(0, 20000),
+      ip: String(req.ip || req.socket.remoteAddress || 'Unknown').slice(0, 100),
+      device: String(req.get('user-agent') || 'Unknown').slice(0, 500),
+    };
+
+    const writeLog = async () => {
+      const raw = await fs.readFile(importLogsPath, 'utf8').catch(() => '[]');
+      const parsed = JSON.parse(raw);
+      const currentLogs = Array.isArray(parsed) ? parsed : [];
+      const nextLogs = [log, ...currentLogs].slice(0, 500);
+      await fs.writeFile(importLogsPath, JSON.stringify(nextLogs, null, 2), 'utf8');
+    };
+
+    const queuedWrite = importLogWriteQueue.then(writeLog, writeLog);
+    importLogWriteQueue = queuedWrite.then(() => undefined, () => undefined);
+    await queuedWrite;
+    return res.status(201).json(log);
+  } catch {
+    return res.status(500).json({ error: 'Failed to save import log' });
   }
 });
 
